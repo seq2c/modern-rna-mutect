@@ -4,7 +4,7 @@
 
 This repository provides a robust Bash script that modernizes and automates the workflow from the original [RNA_MUTECT_1.0-1](https://github.com/broadinstitute/RNA_MUTECT_1.0-1/tree/master) by [Yizhak et al 2019](https://www.science.org/doi/10.1126/science.aaw0726). The original pipeline is a powerful method for somatic variant detection in RNA-Seq, but it is challenging to use today as it relies on outdated tools (GATK3, MuTect1), an old reference genome (hg19), and unmaintained MATLAB executables.
 
-This script replicates the core logic of the pipeline—initial discovery, annotation, targeted re-alignment, and final re-calling—using modern, maintained tools like **GATK4** (including **Mutect2**,**Funcotator**, etc.), and **HISAT2** on the **GRCh38/hg38** human reference genome. The output is a high-confidence VCF file, ready for the further filtering steps.
+This script replicates the core logic of the pipeline, including initial discovery, annotation, targeted re-alignment, and final re-calling, using modern tools like **GATK4** (including **Mutect2**, **Funcotator**, etc.), and **HISAT2** on the **GRCh38/hg38** human reference genome (as an example). The output is a high-confidence VCF file, ready for the further filtering steps.
 
 Modifications:
 * Allows for tumor-only RNA-seq inputs in addition to matched tumor/normal pairs
@@ -13,13 +13,11 @@ Modifications:
 
 ## 1\. Tool installation
 
-Tools:
+Tools (we believe the version usually is the newer the better):
 - gatk
 - samtools
 - hisat2
 - gsutil
-
-**GATK**
 
 Download the prebuilt gatk from [github](https://github.com/broadinstitute/gatk/releases) and unzip it. For example here it is the newest version of gatk 4.6.2
 ```
@@ -192,6 +190,7 @@ If you look at the script, it actually includes the following:
 * Follows the paper’s approach: extract site reads and re-align with HISAT2 for targeted checks
 * Supports both tumor-only and matched-normal modes
 
+**NOTE**: this pipeline intentionally omits Base Quality Score Recalibration (`BQSR`) for RNA-seq variant calling. The BQSR models, which were designed for DNA, do not properly account for RNA-specific error patterns from reverse transcription and can be misled by the artificial read ends created at splice junctions. Unlike other pipelines, the workflow proceeds directly from `SplitNCigarReads` to `Mutect2` to ensure both efficiency and accuracy.
 
 ## To do
 * Rewrite SNV filtering scripts
