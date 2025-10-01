@@ -38,7 +38,7 @@ usage() {
 NUM_PARALLEL_JOBS=8
 RNA_BAM_PATH=""; DNA_BAM_PATH=""; NORMAL_SAMPLE_NAME=""
 REFERENCE_FASTA=""; PANEL_OF_NORMALS=""; GERMLINE_RESOURCE=""
-FUNCOTATOR_DATA_SOURCES=""; HISAT2_INDEX=""; MAIN_OUTPUT_DIR=""
+FUNCOTATOR_DATA_SOURCES=""; HISAT2_INDEX=""; OUTPUT_DIR=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
     -a|--germline-resource) GERMLINE_RESOURCE="$2"; shift;;
     -f|--funcotator-sources) FUNCOTATOR_DATA_SOURCES="$2"; shift;;
     -h|--hisat2-index) HISAT2_INDEX="$2"; shift;;
-    -o|--output-dir) MAIN_OUTPUT_DIR="$2"; shift;;
+    -o|--output-dir) OUTPUT_DIR="$2"; shift;;
     -t|--threads) NUM_PARALLEL_JOBS="$2"; shift;;
     -H|--help) usage;;
     *) echo "Unknown param: $1"; usage;;
@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # validate inputs
-if [ -z "$RNA_BAM_PATH" ] || [ -z "$REFERENCE_FASTA" ] || [ -z "$PANEL_OF_NORMALS" ] || [ -z "$GERMLINE_RESOURCE" ] || [ -z "$FUNCOTATOR_DATA_SOURCES" ] || [ -z "$HISAT2_INDEX" ] || [ -z "$MAIN_OUTPUT_DIR" ]; then
+if [ -z "$RNA_BAM_PATH" ] || [ -z "$REFERENCE_FASTA" ] || [ -z "$PANEL_OF_NORMALS" ] || [ -z "$GERMLINE_RESOURCE" ] || [ -z "$FUNCOTATOR_DATA_SOURCES" ] || [ -z "$HISAT2_INDEX" ] || [ -z "$OUTPUT_DIR" ]; then
     echo "Error: One or more required arguments are missing."
     usage
 fi
@@ -75,7 +75,6 @@ date
 # 1. setup
 echo "[STAGE 1/5] Setting up directories and variables..."
 BASENAME=$(basename ${RNA_BAM_PATH} .bam)
-OUTPUT_DIR=${MAIN_OUTPUT_DIR}/${BASENAME}
 mkdir -p ${OUTPUT_DIR}
 REALIGN_DIR=${OUTPUT_DIR}/hisat2
 mkdir -p ${OUTPUT_DIR} ${REALIGN_DIR}
@@ -116,9 +115,11 @@ gatk GatherBamFiles \
     -I ${OUTPUT_DIR}/split_bam_list.txt \
     -O ${RNA_BAM_SPLIT} \
     -R ${GN}
+samtools index -@ ${NUM_PARALLEL_JOBS} ${RNA_BAM_SPLIT}
+
 # clean up
 while read -r b; do 
-   rm -f ${b} ${b}.bai
+   rm -f ${b} ${b%.bam}.bai
 done < ${OUTPUT_DIR}/split_bam_list.txt
 rm -f ${OUTPUT_DIR}/split_bam_list.txt
 
